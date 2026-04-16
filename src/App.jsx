@@ -1,21 +1,26 @@
 import { useState } from 'react'
 import './App.css'
 
-const USERS = ['Alice', 'Bob']
-
 const INITIAL_MESSAGES = [
-  { id: 1, from: 'Alice', to: 'Bob', text: 'Hi Bob!' },
-  { id: 2, from: 'Bob', to: 'Alice', text: 'Hey Alice 👋' },
+  {
+    id: 1,
+    from: 'Alice',
+    to: 'Bob',
+    plaintext: 'Hi Bob!',
+  },
+  {
+    id: 2,
+    from: 'Bob',
+    to: 'Alice',
+    plaintext: 'Hey Alice 👋',
+  },
 ]
 
 export default function App() {
-  const [currentUser, setCurrentUser] = useState('Alice')
   const [messages, setMessages] = useState(INITIAL_MESSAGES)
   const [draft, setDraft] = useState('')
 
-  const otherUser = USERS.find((user) => user !== currentUser)
-
-  function handleSend(e) {
+  function sendAsAlice(e) {
     e.preventDefault()
 
     const trimmed = draft.trim()
@@ -23,9 +28,9 @@ export default function App() {
 
     const newMessage = {
       id: Date.now(),
-      from: currentUser,
-      to: otherUser,
-      text: trimmed,
+      from: 'Alice',
+      to: 'Bob',
+      plaintext: trimmed,
     }
 
     setMessages((prev) => [...prev, newMessage])
@@ -36,56 +41,69 @@ export default function App() {
     <div className="app">
       <header className="topbar">
         <h1>ZodiacChat</h1>
-
-        <div className="user-switcher">
-          <span>Logged in as:</span>
-          {USERS.map((user) => (
-            <button
-              key={user}
-              className={user === currentUser ? 'active' : ''}
-              onClick={() => setCurrentUser(user)}
-            >
-              {user}
-            </button>
-          ))}
-        </div>
+        <p className="subtitle">Educational peer-to-peer cipher demo</p>
       </header>
 
-      <main className="chat-shell">
-        <div className="chat-header">
-          <h2>{currentUser}'s chat</h2>
-          <p>Conversation with {otherUser}</p>
-        </div>
+      <main className="panel-grid">
+        <section className="panel">
+          <h2>Alice</h2>
+          <p className="panel-subtitle">Sender</p>
 
-        <div className="messages">
-          {messages.map((msg) => {
-            const mine = msg.from === currentUser
+          <form className="composer" onSubmit={sendAsAlice}>
+            <input
+              type="text"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Type a message to Bob..."
+            />
+            <button type="submit">Send to Bob</button>
+          </form>
 
-            return (
-              <div
-                key={msg.id}
-                className={`message-row ${mine ? 'mine' : 'theirs'}`}
-              >
-                <div className="message-bubble">
+          <div className="message-list">
+            {messages
+              .filter((msg) => msg.from === 'Alice')
+              .map((msg) => (
+                <div key={msg.id} className="message-card">
                   <div className="message-meta">
                     {msg.from} → {msg.to}
                   </div>
-                  <div>{msg.text}</div>
+                  <div>{msg.plaintext}</div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              ))}
+          </div>
+        </section>
 
-        <form className="composer" onSubmit={handleSend}>
-          <input
-            type="text"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder={`Message ${otherUser}...`}
-          />
-          <button type="submit">Send</button>
-        </form>
+        <section className="panel">
+          <h2>Bob</h2>
+          <p className="panel-subtitle">Receiver</p>
+
+          <div className="message-list">
+            {messages
+              .filter((msg) => msg.to === 'Bob')
+              .map((msg) => (
+                <div key={msg.id} className="message-card">
+                  <div className="message-meta">Received from {msg.from}</div>
+                  <div>{msg.plaintext}</div>
+                </div>
+              ))}
+          </div>
+        </section>
+
+        <section className="panel">
+          <h2>Eve</h2>
+          <p className="panel-subtitle">Third-party sniffer</p>
+
+          <div className="message-list">
+            {messages.map((msg) => (
+              <div key={msg.id} className="message-card sniffed">
+                <div className="message-meta">
+                  Intercepted: {msg.from} → {msg.to}
+                </div>
+                <div>{msg.plaintext}</div>
+              </div>
+            ))}
+          </div>
+        </section>
       </main>
     </div>
   )
