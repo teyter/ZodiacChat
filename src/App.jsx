@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './App.css'
+
+const STORAGE_KEY = 'zodiacchat-messages'
 
 const INITIAL_MESSAGES = [
   {
@@ -17,8 +19,25 @@ const INITIAL_MESSAGES = [
 ]
 
 export default function App() {
-  const [messages, setMessages] = useState(INITIAL_MESSAGES)
+  const [messages, setMessages] = useState(() => {
+    const savedMessages = localStorage.getItem(STORAGE_KEY)
+
+    if (savedMessages) {
+      try {
+        return JSON.parse(savedMessages)
+      } catch (error) {
+        console.error('Failed to parse saved messages:', error)
+      }
+    }
+
+    return INITIAL_MESSAGES
+  })
+
   const [draft, setDraft] = useState('')
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages))
+  }, [messages])
 
   function sendAsAlice(e) {
     e.preventDefault()
@@ -37,11 +56,22 @@ export default function App() {
     setDraft('')
   }
 
+  function resetConversation() {
+    setMessages(INITIAL_MESSAGES)
+    localStorage.removeItem(STORAGE_KEY)
+  }
+
   return (
     <div className="app">
       <header className="topbar">
-        <h1>ZodiacChat</h1>
-        <p className="subtitle">Educational peer-to-peer cipher demo</p>
+        <div>
+          <h1>ZodiacChat</h1>
+          <p className="subtitle">Educational peer-to-peer cipher demo</p>
+        </div>
+
+        <button className="reset-button" onClick={resetConversation}>
+          Reset chat
+        </button>
       </header>
 
       <main className="panel-grid">
