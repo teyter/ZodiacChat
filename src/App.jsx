@@ -352,11 +352,17 @@ export default function App() {
     }))
   }
 
-  function resetConversation() {
+function resetConversation() {
+  setAppState((prev) => {
     const freshState = buildInitialState()
-    setAppState(freshState)
-    localStorage.removeItem(STORAGE_KEY)
-  }
+
+    return {
+      ...freshState,
+      transpositionEnabled: prev.transpositionEnabled,
+      transpositionWidth: prev.transpositionWidth,
+    }
+  })
+}
 
   return (
     <div className="app">
