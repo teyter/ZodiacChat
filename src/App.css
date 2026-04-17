@@ -119,3 +119,21 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.spaced {
+  margin-top: 12px;
+}
+
+.ciphertext {
+  font-family: "Courier New", monospace;
+  word-break: break-word;
+}

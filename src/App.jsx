@@ -9,14 +9,20 @@ const INITIAL_MESSAGES = [
     from: 'Alice',
     to: 'Bob',
     plaintext: 'Hi Bob!',
+    ciphertext: '!BOB IH',
   },
   {
     id: 2,
     from: 'Bob',
     to: 'Alice',
     plaintext: 'Hey Alice 👋',
+    ciphertext: '👋 ECILA YEH',
   },
 ]
+
+function encryptMessage(plaintext) {
+  return plaintext.toUpperCase().split('').reverse().join('')
+}
 
 export default function App() {
   const [messages, setMessages] = useState(() => {
@@ -50,6 +56,7 @@ export default function App() {
       from: 'Alice',
       to: 'Bob',
       plaintext: trimmed,
+      ciphertext: encryptMessage(trimmed),
     }
 
     setMessages((prev) => [...prev, newMessage])
@@ -97,7 +104,12 @@ export default function App() {
                   <div className="message-meta">
                     {msg.from} → {msg.to}
                   </div>
+
+                  <div className="label">Plaintext</div>
                   <div>{msg.plaintext}</div>
+
+                  <div className="label spaced">Ciphertext produced</div>
+                  <div className="ciphertext">{msg.ciphertext}</div>
                 </div>
               ))}
           </div>
@@ -113,6 +125,8 @@ export default function App() {
               .map((msg) => (
                 <div key={msg.id} className="message-card">
                   <div className="message-meta">Received from {msg.from}</div>
+
+                  <div className="label">What Bob reads</div>
                   <div>{msg.plaintext}</div>
                 </div>
               ))}
@@ -129,7 +143,9 @@ export default function App() {
                 <div className="message-meta">
                   Intercepted: {msg.from} → {msg.to}
                 </div>
-                <div>{msg.plaintext}</div>
+
+                <div className="label">Captured ciphertext</div>
+                <div className="ciphertext">{msg.ciphertext}</div>
               </div>
             ))}
           </div>
