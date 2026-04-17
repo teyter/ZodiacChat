@@ -112,6 +112,8 @@ function encryptWithHomophonicSubstitution(plaintext, key, cyclePointers) {
 }
 
 function decryptCiphertext(ciphertext, reverseKeyMap) {
+  if (!ciphertext) return ''
+
   let plaintext = ''
 
   for (const char of ciphertext) {
@@ -141,7 +143,8 @@ function buildInitialState() {
 
     return {
       ...message,
-      ciphertext,
+      substitutionCiphertext: ciphertext,
+      finalCiphertext: ciphertext,
     }
   })
 
@@ -149,6 +152,8 @@ function buildInitialState() {
     messages,
     substitutionKey,
     cyclePointers,
+    transpositionEnabled: false,
+    transpositionWidth: 5,
   }
 }
 
@@ -192,7 +197,8 @@ export default function App() {
       from: 'Alice',
       to: 'Bob',
       plaintext: trimmed.toUpperCase(),
-      ciphertext,
+      substitutionCiphertext: ciphertext,
+      finalCiphertext: ciphertext,
     }
 
     setAppState((prev) => ({
@@ -202,6 +208,13 @@ export default function App() {
     }))
 
     setDraft('')
+  }
+
+  function toggleTransposition() {
+    setAppState((prev) => ({
+      ...prev,
+      transpositionEnabled: !prev.transpositionEnabled,
+    }))
   }
 
   function resetConversation() {
@@ -220,9 +233,15 @@ export default function App() {
           </p>
         </div>
 
-        <button className="reset-button" onClick={resetConversation}>
-          Reset chat
-        </button>
+        <div className="topbar-controls">
+          <button className="toggle-button" onClick={toggleTransposition}>
+            Transposition: {appState.transpositionEnabled ? 'ON' : 'OFF'}
+          </button>
+
+          <button className="reset-button" onClick={resetConversation}>
+            Reset chat
+          </button>
+        </div>
       </header>
 
       <main className="panel-grid">
@@ -252,8 +271,11 @@ export default function App() {
                   <div className="label">Plaintext</div>
                   <div>{msg.plaintext}</div>
 
-                  <div className="label spaced">Ciphertext produced</div>
-                  <div className="ciphertext">{msg.ciphertext}</div>
+                  <div className="label spaced">After substitution</div>
+                  <div className="ciphertext">{msg.substitutionCiphertext}</div>
+
+                  <div className="label spaced">Final ciphertext sent</div>
+                  <div className="ciphertext">{msg.finalCiphertext}</div>
                 </div>
               ))}
           </div>
@@ -271,10 +293,10 @@ export default function App() {
                   <div className="message-meta">Received from {msg.from}</div>
 
                   <div className="label">Ciphertext received</div>
-                  <div className="ciphertext">{msg.ciphertext}</div>
+                  <div className="ciphertext">{msg.finalCiphertext}</div>
 
                   <div className="label spaced">Bob decrypts as</div>
-                  <div>{decryptCiphertext(msg.ciphertext, reverseKeyMap)}</div>
+                  <div>{decryptCiphertext(msg.finalCiphertext, reverseKeyMap)}</div>
                 </div>
               ))}
           </div>
@@ -292,7 +314,7 @@ export default function App() {
                 </div>
 
                 <div className="label">Captured ciphertext</div>
-                <div className="ciphertext">{msg.ciphertext}</div>
+                <div className="ciphertext">{msg.finalCiphertext}</div>
               </div>
             ))}
           </div>
@@ -300,10 +322,15 @@ export default function App() {
       </main>
 
       <section className="panel key-panel">
-        <h2>Chat substitution key</h2>
+        <h2>Chat settings and substitution key</h2>
         <p className="panel-subtitle">
           Randomly generated once for this chat session
         </p>
+
+        <div className="settings-row">
+          <div><strong>Transposition:</strong> {appState.transpositionEnabled ? 'ON' : 'OFF'}</div>
+          <div><strong>Transposition width:</strong> {appState.transpositionWidth}</div>
+        </div>
 
         <div className="key-grid">
           {Object.entries(appState.substitutionKey).map(([letter, symbols]) => (
