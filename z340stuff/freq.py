@@ -1,3 +1,5 @@
+# https://zodiackillerciphers.com/cipher-explorer/
+# z340 untransposed
 cipher = "H+M8|CV@KEB+*5k.LdR(UVFFz9<>#Z3P>L(MpOGp+2|G+l%WO&D#2b^D(+4(5J+VW)+kp+fZPYLR/8KjRk.#K_Rq#2|<z29^%OF1*HSMF;+BLKJp+l2_cTfBpzOUNyG)y7t-cYA2N:^j*Xz6dpclddG+4-RR+4Ef|pz/JNb>M)+l5||.VqL+Ut*5cUGR)VE5FVZ2cW+|TB45|TC^D4ct-c+zJYM(+y.LW+B.;+B31cOp+8lXz6Ppb&RG+BCOTBzF1K<SMF6N*(+HK29^:OFTO<Sf4pl/Ucy59^W(+l#2C.B)7<FBy-dkF|W<7t_BOYB*-CM>cHD8OZzSkpNA|K;+"
 alphabet = ""
 for letter in cipher:
@@ -28,7 +30,6 @@ z340_key = {
     "R": ["1","E","T","X","Z"],
     "S": ["&","-","J","U"],
     "T": ["#","%","(",":",";","G"],
-    "U": ["/","@","q"],
     "U": ["/","@","q"],
     "V": ["5"],
     "W": [")","W"],
