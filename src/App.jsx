@@ -185,24 +185,65 @@ function reverseTransposeText(text, width) {
   return result
 }
 
+function applyTranspositionIfEnabled(text, transpositionEnabled, transpositionWidth) {
+  if (!transpositionEnabled) return text
+  return transposeText(text, transpositionWidth)
+}
+
+function reverseTranspositionIfEnabled(text, transpositionEnabled, transpositionWidth) {
+  if (!transpositionEnabled) return text
+  return reverseTransposeText(text, transpositionWidth)
+}
+
+function createEncryptedMessage({
+  id,
+  from,
+  to,
+  plaintext,
+  substitutionKey,
+  cyclePointers,
+  transpositionEnabled,
+  transpositionWidth,
+}) {
+  const { ciphertext: substitutionCiphertext, updatedPointers } =
+    encryptWithHomophonicSubstitution(plaintext, substitutionKey, cyclePointers)
+
+  const finalCiphertext = applyTranspositionIfEnabled(
+    substitutionCiphertext,
+    transpositionEnabled,
+    transpositionWidth
+  )
+
+  return {
+    message: {
+      id,
+      from,
+      to,
+      plaintext: plaintext.toUpperCase(),
+      substitutionCiphertext,
+      finalCiphertext,
+      transpositionEnabled,
+      transpositionWidth,
+    },
+    updatedPointers,
+  }
+}
+
 function buildInitialState() {
   const substitutionKey = generateSubstitutionKey()
   let cyclePointers = generateCyclePointers(substitutionKey)
 
   const messages = INITIAL_PLAINTEXT_MESSAGES.map((message) => {
-    const { ciphertext, updatedPointers } = encryptWithHomophonicSubstitution(
-      message.plaintext,
+    const { message: encryptedMessage, updatedPointers } = createEncryptedMessage({
+      ...message,
       substitutionKey,
-      cyclePointers
-    )
+      cyclePointers,
+      transpositionEnabled: false,
+      transpositionWidth: 5,
+    })
 
     cyclePointers = updatedPointers
-
-    return {
-      ...message,
-      substitutionCiphertext: ciphertext,
-      finalCiphertext: ciphertext,
-    }
+    return encryptedMessage
   })
 
   return {
@@ -231,6 +272,9 @@ export default function App() {
             message.substitutionCiphertext ??
             message.ciphertext ??
             '',
+          transpositionEnabled: message.transpositionEnabled ?? false,
+          transpositionWidth:
+            message.transpositionWidth ?? parsedState.transpositionWidth ?? 5,
         }))
 
         return {
@@ -272,20 +316,16 @@ export default function App() {
     const trimmed = draft.trim()
     if (!trimmed) return
 
-    const { ciphertext, updatedPointers } = encryptWithHomophonicSubstitution(
-      trimmed,
-      appState.substitutionKey,
-      appState.cyclePointers
-    )
-
-    const newMessage = {
+    const { message: newMessage, updatedPointers } = createEncryptedMessage({
       id: Date.now(),
       from: 'Alice',
       to: 'Bob',
-      plaintext: trimmed.toUpperCase(),
-      substitutionCiphertext: ciphertext,
-      finalCiphertext: ciphertext,
-    }
+      plaintext: trimmed,
+      substitutionKey: appState.substitutionKey,
+      cyclePointers: appState.cyclePointers,
+      transpositionEnabled: appState.transpositionEnabled,
+      transpositionWidth: appState.transpositionWidth,
+    })
 
     setAppState((prev) => ({
       ...prev,
@@ -369,7 +409,12 @@ export default function App() {
                   <div className="label spaced">After substitution</div>
                   <div className="ciphertext">{msg.substitutionCiphertext}</div>
 
-                  <div className="label spaced">Final ciphertext sent</div>
+                  <div className="label spaced">
+                    Final ciphertext sent
+                    {msg.transpositionEnabled
+                      ? ` (transposition ON, width ${msg.transpositionWidth})`
+                      : ' (transposition OFF)'}
+                  </div>
                   <div className="ciphertext">{msg.finalCiphertext}</div>
                 </div>
               ))}
@@ -383,17 +428,35 @@ export default function App() {
           <div className="message-list">
             {appState.messages
               .filter((msg) => msg.to === 'Bob')
-              .map((msg) => (
-                <div key={msg.id} className="message-card">
-                  <div className="message-meta">Received from {msg.from}</div>
+              .map((msg) => {
+                const substitutionRecovered = reverseTranspositionIfEnabled(
+                  msg.finalCiphertext,
+                  msg.transpositionEnabled,
+                  msg.transpositionWidth
+                )
 
-                  <div className="label">Ciphertext received</div>
-                  <div className="ciphertext">{msg.finalCiphertext}</div>
+                const decryptedPlaintext = decryptCiphertext(
+                  substitutionRecovered,
+                  reverseKeyMap
+                )
 
-                  <div className="label spaced">Bob decrypts as</div>
-                  <div>{decryptCiphertext(msg.finalCiphertext, reverseKeyMap)}</div>
-                </div>
-              ))}
+                return (
+                  <div key={msg.id} className="message-card">
+                    <div className="message-meta">Received from {msg.from}</div>
+
+                    <div className="label">Ciphertext received</div>
+                    <div className="ciphertext">{msg.finalCiphertext}</div>
+
+                    <div className="label spaced">
+                      After reversing transposition
+                    </div>
+                    <div className="ciphertext">{substitutionRecovered}</div>
+
+                    <div className="label spaced">Bob decrypts as</div>
+                    <div>{decryptedPlaintext}</div>
+                  </div>
+                )
+              })}
           </div>
         </section>
 
