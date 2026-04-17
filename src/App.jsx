@@ -45,7 +45,7 @@ function shuffleArray(items) {
 
   for (let i = array.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[array[i], array[j]] = [array[j], array[i]]
+      ;[array[i], array[j]] = [array[j], array[i]]
   }
 
   return array
@@ -163,7 +163,25 @@ export default function App() {
 
     if (savedState) {
       try {
-        return JSON.parse(savedState)
+        const parsedState = JSON.parse(savedState)
+
+        const migratedMessages = (parsedState.messages || []).map((message) => ({
+          ...message,
+          substitutionCiphertext:
+            message.substitutionCiphertext ?? message.ciphertext ?? '',
+          finalCiphertext:
+            message.finalCiphertext ??
+            message.substitutionCiphertext ??
+            message.ciphertext ??
+            '',
+        }))
+
+        return {
+          ...parsedState,
+          messages: migratedMessages,
+          transpositionEnabled: parsedState.transpositionEnabled ?? false,
+          transpositionWidth: parsedState.transpositionWidth ?? 5,
+        }
       } catch (error) {
         console.error('Failed to parse saved app state:', error)
       }
