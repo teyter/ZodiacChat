@@ -137,3 +137,36 @@ body {
   font-family: "Courier New", monospace;
   word-break: break-word;
 }
+
+.key-panel {
+  margin-top: 20px;
+}
+
+.key-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.key-row {
+  background: #f7f7f7;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.key-letter {
+  display: inline-block;
+  font-weight: bold;
+  width: 24px;
+}
+
+.key-symbols {
+  font-family: "Courier New", monospace;
+  word-break: break-word;
+}
+
+@media (max-width: 900px) {
+  .key-grid {
+    grid-template-columns: 1fr;
+  }
+}

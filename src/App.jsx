@@ -1,49 +1,179 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 
-const STORAGE_KEY = 'zodiacchat-messages'
+const STORAGE_KEY = 'zodiacchat-state'
 
-const INITIAL_MESSAGES = [
-  {
-    id: 1,
-    from: 'Alice',
-    to: 'Bob',
-    plaintext: 'Hi Bob!',
-    ciphertext: '!BOB IH',
-  },
-  {
-    id: 2,
-    from: 'Bob',
-    to: 'Alice',
-    plaintext: 'Hey Alice 👋',
-    ciphertext: '👋 ECILA YEH',
-  },
+const SYMBOLS =
+  'H+M8|CV@KEB*5k.LdR(UFz9<>#Z3PpOG2l%W&Db^4J)fY/j_q1S;cTNy7t-A:X6'
+
+const LETTER_DISTRIBUTION = {
+  E: 6,
+  T: 5,
+  A: 5,
+  O: 4,
+  I: 4,
+  N: 4,
+  S: 3,
+  H: 3,
+  R: 3,
+  D: 3,
+  L: 3,
+  U: 2,
+  C: 2,
+  M: 2,
+  W: 2,
+  F: 2,
+  G: 2,
+  Y: 2,
+  P: 2,
+  B: 1,
+  V: 1,
+  K: 1,
+  J: 1,
+  X: 1,
+  Q: 1,
+  Z: 1,
+}
+
+const INITIAL_PLAINTEXT_MESSAGES = [
+  { id: 1, from: 'Alice', to: 'Bob', plaintext: 'HELLO BOB' },
+  { id: 2, from: 'Bob', to: 'Alice', plaintext: 'HI ALICE' },
 ]
 
-function encryptMessage(plaintext) {
-  return plaintext.toUpperCase().split('').reverse().join('')
+function shuffleArray(items) {
+  const array = [...items]
+
+  for (let i = array.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[array[i], array[j]] = [array[j], array[i]]
+  }
+
+  return array
+}
+
+function generateSubstitutionKey() {
+  const shuffledSymbols = shuffleArray(SYMBOLS.split(''))
+  const key = {}
+  let cursor = 0
+
+  for (const letter of Object.keys(LETTER_DISTRIBUTION)) {
+    const count = LETTER_DISTRIBUTION[letter]
+    key[letter] = shuffledSymbols.slice(cursor, cursor + count)
+    cursor += count
+  }
+
+  return key
+}
+
+function generateCyclePointers(key) {
+  const pointers = {}
+
+  for (const letter of Object.keys(key)) {
+    pointers[letter] = 0
+  }
+
+  return pointers
+}
+
+function buildReverseKeyMap(key) {
+  const reverseMap = {}
+
+  for (const [letter, symbols] of Object.entries(key)) {
+    for (const symbol of symbols) {
+      reverseMap[symbol] = letter
+    }
+  }
+
+  return reverseMap
+}
+
+function encryptWithHomophonicSubstitution(plaintext, key, cyclePointers) {
+  const upper = plaintext.toUpperCase()
+  let ciphertext = ''
+  const nextPointers = { ...cyclePointers }
+
+  for (const char of upper) {
+    if (key[char] && key[char].length > 0) {
+      const symbols = key[char]
+      const currentIndex = nextPointers[char] ?? 0
+      const symbol = symbols[currentIndex]
+
+      ciphertext += symbol
+      nextPointers[char] = (currentIndex + 1) % symbols.length
+    } else {
+      ciphertext += char
+    }
+  }
+
+  return {
+    ciphertext,
+    updatedPointers: nextPointers,
+  }
+}
+
+function decryptCiphertext(ciphertext, reverseKeyMap) {
+  let plaintext = ''
+
+  for (const char of ciphertext) {
+    if (reverseKeyMap[char]) {
+      plaintext += reverseKeyMap[char]
+    } else {
+      plaintext += char
+    }
+  }
+
+  return plaintext
+}
+
+function buildInitialState() {
+  const substitutionKey = generateSubstitutionKey()
+  let cyclePointers = generateCyclePointers(substitutionKey)
+  const reverseKeyMap = buildReverseKeyMap(substitutionKey)
+
+  const messages = INITIAL_PLAINTEXT_MESSAGES.map((message) => {
+    const { ciphertext, updatedPointers } = encryptWithHomophonicSubstitution(
+      message.plaintext,
+      substitutionKey,
+      cyclePointers
+    )
+
+    cyclePointers = updatedPointers
+
+    return {
+      ...message,
+      ciphertext,
+    }
+  })
+
+  return {
+    messages,
+    substitutionKey,
+    cyclePointers,
+  }
 }
 
 export default function App() {
-  const [messages, setMessages] = useState(() => {
-    const savedMessages = localStorage.getItem(STORAGE_KEY)
+  const [appState, setAppState] = useState(() => {
+    const savedState = localStorage.getItem(STORAGE_KEY)
 
-    if (savedMessages) {
+    if (savedState) {
       try {
-        return JSON.parse(savedMessages)
+        return JSON.parse(savedState)
       } catch (error) {
-        console.error('Failed to parse saved messages:', error)
+        console.error('Failed to parse saved app state:', error)
       }
     }
 
-    return INITIAL_MESSAGES
+    return buildInitialState()
   })
 
   const [draft, setDraft] = useState('')
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(messages))
-  }, [messages])
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(appState))
+  }, [appState])
+
+  const reverseKeyMap = buildReverseKeyMap(appState.substitutionKey)
 
   function sendAsAlice(e) {
     e.preventDefault()
@@ -51,20 +181,32 @@ export default function App() {
     const trimmed = draft.trim()
     if (!trimmed) return
 
+    const { ciphertext, updatedPointers } = encryptWithHomophonicSubstitution(
+      trimmed,
+      appState.substitutionKey,
+      appState.cyclePointers
+    )
+
     const newMessage = {
       id: Date.now(),
       from: 'Alice',
       to: 'Bob',
-      plaintext: trimmed,
-      ciphertext: encryptMessage(trimmed),
+      plaintext: trimmed.toUpperCase(),
+      ciphertext,
     }
 
-    setMessages((prev) => [...prev, newMessage])
+    setAppState((prev) => ({
+      ...prev,
+      messages: [...prev.messages, newMessage],
+      cyclePointers: updatedPointers,
+    }))
+
     setDraft('')
   }
 
   function resetConversation() {
-    setMessages(INITIAL_MESSAGES)
+    const freshState = buildInitialState()
+    setAppState(freshState)
     localStorage.removeItem(STORAGE_KEY)
   }
 
@@ -73,7 +215,9 @@ export default function App() {
       <header className="topbar">
         <div>
           <h1>ZodiacChat</h1>
-          <p className="subtitle">Educational peer-to-peer cipher demo</p>
+          <p className="subtitle">
+            Educational peer-to-peer homophonic cipher demo
+          </p>
         </div>
 
         <button className="reset-button" onClick={resetConversation}>
@@ -97,7 +241,7 @@ export default function App() {
           </form>
 
           <div className="message-list">
-            {messages
+            {appState.messages
               .filter((msg) => msg.from === 'Alice')
               .map((msg) => (
                 <div key={msg.id} className="message-card">
@@ -120,14 +264,17 @@ export default function App() {
           <p className="panel-subtitle">Receiver</p>
 
           <div className="message-list">
-            {messages
+            {appState.messages
               .filter((msg) => msg.to === 'Bob')
               .map((msg) => (
                 <div key={msg.id} className="message-card">
                   <div className="message-meta">Received from {msg.from}</div>
 
-                  <div className="label">What Bob reads</div>
-                  <div>{msg.plaintext}</div>
+                  <div className="label">Ciphertext received</div>
+                  <div className="ciphertext">{msg.ciphertext}</div>
+
+                  <div className="label spaced">Bob decrypts as</div>
+                  <div>{decryptCiphertext(msg.ciphertext, reverseKeyMap)}</div>
                 </div>
               ))}
           </div>
@@ -138,7 +285,7 @@ export default function App() {
           <p className="panel-subtitle">Third-party sniffer</p>
 
           <div className="message-list">
-            {messages.map((msg) => (
+            {appState.messages.map((msg) => (
               <div key={msg.id} className="message-card sniffed">
                 <div className="message-meta">
                   Intercepted: {msg.from} → {msg.to}
@@ -151,6 +298,22 @@ export default function App() {
           </div>
         </section>
       </main>
+
+      <section className="panel key-panel">
+        <h2>Chat substitution key</h2>
+        <p className="panel-subtitle">
+          Randomly generated once for this chat session
+        </p>
+
+        <div className="key-grid">
+          {Object.entries(appState.substitutionKey).map(([letter, symbols]) => (
+            <div key={letter} className="key-row">
+              <span className="key-letter">{letter}</span>
+              <span className="key-symbols">{symbols.join(' ')}</span>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   )
 }
