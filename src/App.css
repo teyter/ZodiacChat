@@ -192,3 +192,11 @@ body {
   flex-wrap: wrap;
   margin-bottom: 16px;
 }
+
+.width-input {
+  width: 72px;
+  margin-left: 8px;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}

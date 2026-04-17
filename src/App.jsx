@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 
 const STORAGE_KEY = 'zodiacchat-state'
@@ -45,7 +45,7 @@ function shuffleArray(items) {
 
   for (let i = array.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1))
-      ;[array[i], array[j]] = [array[j], array[i]]
+    ;[array[i], array[j]] = [array[j], array[i]]
   }
 
   return array
@@ -127,10 +127,67 @@ function decryptCiphertext(ciphertext, reverseKeyMap) {
   return plaintext
 }
 
+function transposeText(text, width) {
+  if (!text || width <= 1) return text
+
+  const rows = []
+  for (let i = 0; i < text.length; i += width) {
+    rows.push(text.slice(i, i + width))
+  }
+
+  let result = ''
+
+  for (let col = 0; col < width; col += 1) {
+    for (let row = 0; row < rows.length; row += 1) {
+      const char = rows[row][col]
+      if (char !== undefined) {
+        result += char
+      }
+    }
+  }
+
+  return result
+}
+
+function reverseTransposeText(text, width) {
+  if (!text || width <= 1) return text
+
+  const length = text.length
+  const fullRows = Math.floor(length / width)
+  const remainder = length % width
+  const rowCount = Math.ceil(length / width)
+
+  const columnLengths = Array.from({ length: width }, (_, col) => {
+    if (remainder === 0) return fullRows
+    return col < remainder ? fullRows + 1 : fullRows
+  })
+
+  const columns = []
+  let cursor = 0
+
+  for (let col = 0; col < width; col += 1) {
+    const columnLength = columnLengths[col]
+    columns[col] = text.slice(cursor, cursor + columnLength)
+    cursor += columnLength
+  }
+
+  let result = ''
+
+  for (let row = 0; row < rowCount; row += 1) {
+    for (let col = 0; col < width; col += 1) {
+      const char = columns[col][row]
+      if (char !== undefined) {
+        result += char
+      }
+    }
+  }
+
+  return result
+}
+
 function buildInitialState() {
   const substitutionKey = generateSubstitutionKey()
   let cyclePointers = generateCyclePointers(substitutionKey)
-  const reverseKeyMap = buildReverseKeyMap(substitutionKey)
 
   const messages = INITIAL_PLAINTEXT_MESSAGES.map((message) => {
     const { ciphertext, updatedPointers } = encryptWithHomophonicSubstitution(
@@ -191,12 +248,23 @@ export default function App() {
   })
 
   const [draft, setDraft] = useState('')
+  const [transpositionDemoInput, setTranspositionDemoInput] = useState('HELLOTHERE')
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(appState))
   }, [appState])
 
   const reverseKeyMap = buildReverseKeyMap(appState.substitutionKey)
+
+  const transposedDemo = useMemo(
+    () => transposeText(transpositionDemoInput, appState.transpositionWidth),
+    [transpositionDemoInput, appState.transpositionWidth]
+  )
+
+  const reversedDemo = useMemo(
+    () => reverseTransposeText(transposedDemo, appState.transpositionWidth),
+    [transposedDemo, appState.transpositionWidth]
+  )
 
   function sendAsAlice(e) {
     e.preventDefault()
@@ -232,6 +300,15 @@ export default function App() {
     setAppState((prev) => ({
       ...prev,
       transpositionEnabled: !prev.transpositionEnabled,
+    }))
+  }
+
+  function handleTranspositionWidthChange(e) {
+    const nextWidth = Number(e.target.value)
+
+    setAppState((prev) => ({
+      ...prev,
+      transpositionWidth: Number.isNaN(nextWidth) ? 5 : Math.max(2, nextWidth),
     }))
   }
 
@@ -346,8 +423,20 @@ export default function App() {
         </p>
 
         <div className="settings-row">
-          <div><strong>Transposition:</strong> {appState.transpositionEnabled ? 'ON' : 'OFF'}</div>
-          <div><strong>Transposition width:</strong> {appState.transpositionWidth}</div>
+          <div>
+            <strong>Transposition:</strong>{' '}
+            {appState.transpositionEnabled ? 'ON' : 'OFF'}
+          </div>
+          <div>
+            <strong>Transposition width:</strong>{' '}
+            <input
+              className="width-input"
+              type="number"
+              min="2"
+              value={appState.transpositionWidth}
+              onChange={handleTranspositionWidthChange}
+            />
+          </div>
         </div>
 
         <div className="key-grid">
@@ -357,6 +446,35 @@ export default function App() {
               <span className="key-symbols">{symbols.join(' ')}</span>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="panel key-panel">
+        <h2>Transposition test area</h2>
+        <p className="panel-subtitle">
+          Testing the transposition functions before wiring them into the chat
+        </p>
+
+        <div className="composer">
+          <input
+            type="text"
+            value={transpositionDemoInput}
+            onChange={(e) => setTranspositionDemoInput(e.target.value.toUpperCase())}
+            placeholder="Enter text to transpose..."
+          />
+        </div>
+
+        <div className="message-list">
+          <div className="message-card">
+            <div className="label">Original text</div>
+            <div className="ciphertext">{transpositionDemoInput}</div>
+
+            <div className="label spaced">After transposition</div>
+            <div className="ciphertext">{transposedDemo}</div>
+
+            <div className="label spaced">After reversing transposition</div>
+            <div className="ciphertext">{reversedDemo}</div>
+          </div>
         </div>
       </section>
     </div>
