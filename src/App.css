@@ -334,3 +334,11 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.secondary-button {
+  padding: 12px 16px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  background: #f7f7f7;
+  cursor: pointer;
+}

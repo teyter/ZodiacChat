@@ -289,6 +289,31 @@ function getSortedSymbolCounts(messages) {
   return Object.entries(counts).sort((a, b) => b[1] - a[1])
 }
 
+function reencryptMessagesWithNewKey(messages, substitutionKey) {
+  let cyclePointers = generateCyclePointers(substitutionKey)
+
+  const reencryptedMessages = messages.map((message) => {
+    const { message: encryptedMessage, updatedPointers } = createEncryptedMessage({
+      id: message.id,
+      from: message.from,
+      to: message.to,
+      plaintext: message.plaintext,
+      substitutionKey,
+      cyclePointers,
+      transpositionEnabled: message.transpositionEnabled,
+      transpositionWidth: message.transpositionWidth,
+    })
+
+    cyclePointers = updatedPointers
+    return encryptedMessage
+  })
+
+  return {
+    messages: reencryptedMessages,
+    cyclePointers,
+  }
+}
+
 export default function App() {
   const [appState, setAppState] = useState(() => {
     const savedState = localStorage.getItem(STORAGE_KEY)
@@ -414,6 +439,21 @@ export default function App() {
     })
   }
 
+  function generateNewKey() {
+    setAppState((prev) => {
+      const newSubstitutionKey = generateSubstitutionKey()
+      const { messages: reencryptedMessages, cyclePointers } =
+        reencryptMessagesWithNewKey(prev.messages, newSubstitutionKey)
+
+      return {
+        ...prev,
+        substitutionKey: newSubstitutionKey,
+        messages: reencryptedMessages,
+        cyclePointers,
+      }
+    })
+  }
+
   return (
     <div className="app">
       <header className="topbar">
@@ -427,6 +467,10 @@ export default function App() {
         <div className="topbar-controls">
           <button className="toggle-button" onClick={toggleTransposition}>
             Transposition: {appState.transpositionEnabled ? 'ON' : 'OFF'}
+          </button>
+
+          <button className="secondary-button" onClick={generateNewKey}>
+            New key
           </button>
 
           <button className="reset-button" onClick={resetConversation}>
