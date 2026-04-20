@@ -495,17 +495,48 @@ export default function App() {
 
         <section className="panel">
           <h2>Eve</h2>
-          <p className="panel-subtitle">Third-party sniffer</p>
+          <p className="panel-subtitle">Third-party sniffer / attacker view</p>
 
           <div className="message-list">
             {appState.messages.map((msg) => (
-              <div key={msg.id} className="message-card sniffed">
+              <div key={msg.id} className="message-card sniffed attacker-card">
                 <div className="message-meta">
                   Intercepted: {msg.from} → {msg.to}
                 </div>
 
-                <div className="label">Captured ciphertext</div>
-                <div className="ciphertext">{msg.finalCiphertext}</div>
+                <div className="attacker-meta-grid">
+                  <div className="attacker-meta-item">
+                    <span className="attacker-meta-label">Length</span>
+                    <span className="attacker-meta-value">
+                      {msg.finalCiphertext.length}
+                    </span>
+                  </div>
+
+                  <div className="attacker-meta-item">
+                    <span className="attacker-meta-label">Transposition</span>
+                    <span className="attacker-meta-value">
+                      {msg.transpositionEnabled ? 'ON' : 'OFF'}
+                    </span>
+                  </div>
+
+                  <div className="attacker-meta-item">
+                    <span className="attacker-meta-label">Width</span>
+                    <span className="attacker-meta-value">
+                      {msg.transpositionWidth}
+                    </span>
+                  </div>
+
+                  <div className="attacker-meta-item">
+                    <span className="attacker-meta-label">Route</span>
+                    <span className="attacker-meta-value">
+                      {msg.from} → {msg.to}
+                    </span>
+                  </div>
+                </div>
+
+                <PipelineStep label="Captured ciphertext" emphasized>
+                  <span className="ciphertext">{msg.finalCiphertext}</span>
+                </PipelineStep>
               </div>
             ))}
           </div>
