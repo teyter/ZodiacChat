@@ -45,7 +45,7 @@ function shuffleArray(items) {
 
   for (let i = array.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1))
-    ;[array[i], array[j]] = [array[j], array[i]]
+      ;[array[i], array[j]] = [array[j], array[i]]
   }
 
   return array
@@ -255,6 +255,19 @@ function buildInitialState() {
   }
 }
 
+function PipelineStep({ label, children, emphasized = false }) {
+  return (
+    <div className={`pipeline-step ${emphasized ? 'emphasized' : ''}`}>
+      <div className="label">{label}</div>
+      <div className="pipeline-value">{children}</div>
+    </div>
+  )
+}
+
+function PipelineArrow() {
+  return <div className="pipeline-arrow">↓</div>
+}
+
 export default function App() {
   const [appState, setAppState] = useState(() => {
     const savedState = localStorage.getItem(STORAGE_KEY)
@@ -352,17 +365,17 @@ export default function App() {
     }))
   }
 
-function resetConversation() {
-  setAppState((prev) => {
-    const freshState = buildInitialState()
+  function resetConversation() {
+    setAppState((prev) => {
+      const freshState = buildInitialState()
 
-    return {
-      ...freshState,
-      transpositionEnabled: prev.transpositionEnabled,
-      transpositionWidth: prev.transpositionWidth,
-    }
-  })
-}
+      return {
+        ...freshState,
+        transpositionEnabled: prev.transpositionEnabled,
+        transpositionWidth: prev.transpositionWidth,
+      }
+    })
+  }
 
   return (
     <div className="app">
@@ -404,24 +417,33 @@ function resetConversation() {
             {appState.messages
               .filter((msg) => msg.from === 'Alice')
               .map((msg) => (
-                <div key={msg.id} className="message-card">
+                <div key={msg.id} className="message-card pipeline-card">
                   <div className="message-meta">
                     {msg.from} → {msg.to}
                   </div>
 
-                  <div className="label">Plaintext</div>
-                  <div>{msg.plaintext}</div>
+                  <PipelineStep label="Plaintext">
+                    {msg.plaintext}
+                  </PipelineStep>
 
-                  <div className="label spaced">After substitution</div>
-                  <div className="ciphertext">{msg.substitutionCiphertext}</div>
+                  <PipelineArrow />
 
-                  <div className="label spaced">
-                    Final ciphertext sent
-                    {msg.transpositionEnabled
-                      ? ` (transposition ON, width ${msg.transpositionWidth})`
-                      : ' (transposition OFF)'}
-                  </div>
-                  <div className="ciphertext">{msg.finalCiphertext}</div>
+                  <PipelineStep label="After substitution" emphasized>
+                    <span className="ciphertext">{msg.substitutionCiphertext}</span>
+                  </PipelineStep>
+
+                  <PipelineArrow />
+
+                  <PipelineStep
+                    label={
+                      msg.transpositionEnabled
+                        ? `Final ciphertext sent (transposition ON, width ${msg.transpositionWidth})`
+                        : 'Final ciphertext sent (transposition OFF)'
+                    }
+                    emphasized
+                  >
+                    <span className="ciphertext">{msg.finalCiphertext}</span>
+                  </PipelineStep>
                 </div>
               ))}
           </div>
@@ -447,19 +469,24 @@ function resetConversation() {
                 )
 
                 return (
-                  <div key={msg.id} className="message-card">
+                  <div key={msg.id} className="message-card pipeline-card">
                     <div className="message-meta">Received from {msg.from}</div>
 
-                    <div className="label">Ciphertext received</div>
-                    <div className="ciphertext">{msg.finalCiphertext}</div>
+                    <PipelineStep label="Ciphertext received" emphasized>
+                      <span className="ciphertext">{msg.finalCiphertext}</span>
+                    </PipelineStep>
 
-                    <div className="label spaced">
-                      After reversing transposition
-                    </div>
-                    <div className="ciphertext">{substitutionRecovered}</div>
+                    <PipelineArrow />
 
-                    <div className="label spaced">Bob decrypts as</div>
-                    <div>{decryptedPlaintext}</div>
+                    <PipelineStep label="After reversing transposition" emphasized>
+                      <span className="ciphertext">{substitutionRecovered}</span>
+                    </PipelineStep>
+
+                    <PipelineArrow />
+
+                    <PipelineStep label="Bob decrypts as">
+                      {decryptedPlaintext}
+                    </PipelineStep>
                   </div>
                 )
               })}
