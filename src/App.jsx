@@ -268,6 +268,27 @@ function PipelineArrow() {
   return <div className="pipeline-arrow">↓</div>
 }
 
+function countCipherSymbols(messages) {
+  const counts = {}
+
+  for (const message of messages) {
+    const text = message.finalCiphertext || ''
+
+    for (const char of text) {
+      if (char === ' ') continue
+      counts[char] = (counts[char] || 0) + 1
+    }
+  }
+
+  return counts
+}
+
+function getSortedSymbolCounts(messages) {
+  const counts = countCipherSymbols(messages)
+
+  return Object.entries(counts).sort((a, b) => b[1] - a[1])
+}
+
 export default function App() {
   const [appState, setAppState] = useState(() => {
     const savedState = localStorage.getItem(STORAGE_KEY)
@@ -312,6 +333,22 @@ export default function App() {
   }, [appState])
 
   const reverseKeyMap = buildReverseKeyMap(appState.substitutionKey)
+
+  const sortedSymbolCounts = useMemo(
+    () => getSortedSymbolCounts(appState.messages),
+    [appState.messages]
+  )
+
+  const totalInterceptedCharacters = useMemo(
+    () =>
+      appState.messages.reduce(
+        (sum, msg) => sum + (msg.finalCiphertext?.replaceAll(' ', '').length || 0),
+        0
+      ),
+    [appState.messages]
+  )
+
+  const uniqueInterceptedSymbols = sortedSymbolCounts.length
 
   const transposedDemo = useMemo(
     () => transposeText(transpositionDemoInput, appState.transpositionWidth),
@@ -496,6 +533,44 @@ export default function App() {
         <section className="panel">
           <h2>Eve</h2>
           <p className="panel-subtitle">Third-party sniffer / attacker view</p>
+
+          <div className="attacker-summary">
+            <div className="attacker-summary-card">
+              <span className="attacker-meta-label">Messages intercepted</span>
+              <span className="attacker-summary-value">{appState.messages.length}</span>
+            </div>
+
+            <div className="attacker-summary-card">
+              <span className="attacker-meta-label">Total cipher symbols</span>
+              <span className="attacker-summary-value">
+                {totalInterceptedCharacters}
+              </span>
+            </div>
+
+            <div className="attacker-summary-card">
+              <span className="attacker-meta-label">Unique symbols seen</span>
+              <span className="attacker-summary-value">
+                {uniqueInterceptedSymbols}
+              </span>
+            </div>
+          </div>
+
+          <div className="frequency-panel">
+            <div className="label">Symbol frequency analysis</div>
+
+            {sortedSymbolCounts.length === 0 ? (
+              <div className="empty-state">No intercepted ciphertext yet.</div>
+            ) : (
+              <div className="frequency-grid">
+                {sortedSymbolCounts.map(([symbol, count]) => (
+                  <div key={symbol} className="frequency-chip">
+                    <span className="frequency-symbol ciphertext">{symbol}</span>
+                    <span className="frequency-count">{count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
           <div className="message-list">
             {appState.messages.map((msg) => (

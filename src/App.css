@@ -268,3 +268,69 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+.attacker-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.attacker-summary-card {
+  background: white;
+  border: 1px solid #f1e4e4;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.attacker-summary-value {
+  display: block;
+  font-size: 22px;
+  font-weight: bold;
+  margin-top: 4px;
+}
+
+.frequency-panel {
+  background: white;
+  border: 1px solid #f1e4e4;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 14px;
+}
+
+.frequency-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.frequency-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fffafa;
+  border: 1px solid #ecdada;
+  border-radius: 999px;
+  padding: 6px 10px;
+}
+
+.frequency-symbol {
+  font-weight: bold;
+}
+
+.frequency-count {
+  font-size: 13px;
+  color: #666;
+}
+
+.empty-state {
+  color: #777;
+  margin-top: 8px;
+}
+
+@media (max-width: 900px) {
+  .attacker-summary {
+    grid-template-columns: 1fr;
+  }
+}
