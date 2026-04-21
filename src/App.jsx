@@ -314,6 +314,42 @@ function reencryptMessagesWithNewKey(messages, substitutionKey) {
   }
 }
 
+function buildTranspositionGrid(text, width) {
+  if (!text || width <= 1) return []
+
+  const rows = []
+
+  for (let i = 0; i < text.length; i += width) {
+    rows.push(text.slice(i, i + width).split(''))
+  }
+
+  return rows
+}
+
+function TranspositionGrid({ text, width }) {
+  const rows = buildTranspositionGrid(text, width)
+
+  if (!rows.length) return null
+
+  return (
+    <div className="transposition-grid">
+      {rows.map((row, rowIndex) => (
+        <div key={rowIndex} className="transposition-row">
+          {Array.from({ length: width }).map((_, colIndex) => {
+            const char = row[colIndex] ?? ''
+
+            return (
+              <div key={colIndex} className="transposition-cell">
+                {char}
+              </div>
+            )
+          })}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function App() {
   const [appState, setAppState] = useState(() => {
     const savedState = localStorage.getItem(STORAGE_KEY)
@@ -696,9 +732,9 @@ export default function App() {
       </section>
 
       <section className="panel key-panel">
-        <h2>Transposition test area</h2>
+        <h2>How columnar transposition works</h2>
         <p className="panel-subtitle">
-          Testing the transposition functions before wiring them into the chat
+          The text is written row-by-row into a grid, then read column-by-column.
         </p>
 
         <div className="composer">
@@ -710,15 +746,27 @@ export default function App() {
           />
         </div>
 
-        <div className="message-list">
+        <div className="transposition-demo-layout">
           <div className="message-card">
-            <div className="label">Original text</div>
+            <div className="label">Input text</div>
             <div className="ciphertext">{transpositionDemoInput}</div>
 
-            <div className="label spaced">After transposition</div>
+            <div className="label spaced">
+              Written row-by-row into a grid (width {appState.transpositionWidth})
+            </div>
+            <TranspositionGrid
+              text={transpositionDemoInput}
+              width={appState.transpositionWidth}
+            />
+
+            <div className="transposition-note">
+              Read each column from top to bottom, moving left to right.
+            </div>
+
+            <div className="label spaced">Transposed output</div>
             <div className="ciphertext">{transposedDemo}</div>
 
-            <div className="label spaced">After reversing transposition</div>
+            <div className="label spaced">Reverse transposition restores</div>
             <div className="ciphertext">{reversedDemo}</div>
           </div>
         </div>
