@@ -72,6 +72,7 @@ body {
   width: 100%;
   padding: 12px;
   border: 1px solid #ccc;
+  margin-top: 12px;
   border-radius: 10px;
 }
 
@@ -193,12 +194,34 @@ body {
   margin-bottom: 16px;
 }
 
-.width-input {
-  width: 72px;
-  margin-left: 8px;
-  padding: 6px 8px;
+.width-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.width-button-group {
+  display: flex;
+  gap: 8px;
+}
+
+.width-button {
+  padding: 8px 12px;
   border: 1px solid #ccc;
   border-radius: 8px;
+  background: white;
+  cursor: pointer;
+}
+
+.width-button.active {
+  background: #111;
+  color: white;
+  border-color: #111;
+}
+
+.explainer-width-selector {
+  margin-bottom: 12px;
 }
 
 .pipeline-card {

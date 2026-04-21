@@ -454,12 +454,10 @@ export default function App() {
     }))
   }
 
-  function handleTranspositionWidthChange(e) {
-    const nextWidth = Number(e.target.value)
-
+  function handleTranspositionWidthChange(nextWidth) {
     setAppState((prev) => ({
       ...prev,
-      transpositionWidth: Number.isNaN(nextWidth) ? 5 : Math.max(2, nextWidth),
+      transpositionWidth: nextWidth,
     }))
   }
 
@@ -709,16 +707,6 @@ export default function App() {
             <strong>Transposition:</strong>{' '}
             {appState.transpositionEnabled ? 'ON' : 'OFF'}
           </div>
-          <div>
-            <strong>Transposition width:</strong>{' '}
-            <input
-              className="width-input"
-              type="number"
-              min="2"
-              value={appState.transpositionWidth}
-              onChange={handleTranspositionWidthChange}
-            />
-          </div>
         </div>
 
         <div className="key-grid">
@@ -736,6 +724,23 @@ export default function App() {
         <p className="panel-subtitle">
           The text is written row-by-row into a grid, then read column-by-column.
         </p>
+
+        <div className="width-selector">
+          <strong>Transposition width:</strong>
+          <div className="width-button-group">
+            {[4, 5, 6].map((width) => (
+              <button
+                key={width}
+                type="button"
+                className={`width-button ${appState.transpositionWidth === width ? 'active' : ''
+                  }`}
+                onClick={() => handleTranspositionWidthChange(width)}
+              >
+                {width}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="composer">
           <input
